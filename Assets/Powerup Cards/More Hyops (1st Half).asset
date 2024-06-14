@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19eb6bf3a1a81154fb3bfb2918e3d416, type: 3}
+  m_Name: More Hyops (1st Half)
+  m_EditorClassIdentifier: 
+  cardName: More Hyops (1st Half)
+  description: Increases total number of jumps by 1.
+  rarity: 0
+  cost: 0
+  functionName: IncreaseJumpTotal
+  data: 1
+  time: 1
+  duration: 5
