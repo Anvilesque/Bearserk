@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1342370924718660711}
   - component: {fileID: 878924424599603216}
   m_Layer: 0
-  m_Name: bzExplode
+  m_Name: BearzookaExplode
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

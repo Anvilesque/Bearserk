@@ -27,31 +27,10 @@ public class PauseManager : MonoBehaviour
         else isPaused = false;
     }
 
-    public void ForcePause()
-    {
-        Time.timeScale = 0;
-        AudioListener.pause = true;
-    }
-
-    public void ForceUnpause()
-    {
-        Time.timeScale = 1;
-        AudioListener.pause = false;
-    }
-
     public void Pause()
     {
-        if (TutorialManager.tutorialMode) return;
-        if (!isPaused)
-        {
-            Time.timeScale = 0;
-            AudioListener.pause = true;
-        }
-        else
-        {
-            Time.timeScale = 1;
-            AudioListener.pause = false;
-        }
-        
+        if (TutorialManager.tutorialModeEnabled) return;
+        Time.timeScale = isPaused ? 1 : 0;
+        AudioListener.pause = isPaused ? false : true;        
     }
 }

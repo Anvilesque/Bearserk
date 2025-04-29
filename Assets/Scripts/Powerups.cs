@@ -39,7 +39,15 @@ public class Powerups : MonoBehaviour
         PowerupData = new List<List<float>>();
         PowerupTime = new List<List<int>>();
         PowerupFunction = new List<MethodDelegate>();
-        float[] defaults = {mvmt.defaults["sprintMultiplier"], mvmt.defaults["maxHorizSpeed"], mvmt.defaults["jumpSpeed"], mvmt.defaults["jumpsTotal"], mvmt.defaults["shootCooldown"], mvmt.defaults["shootForce"], mvmt.defaults["clawnchCooldown"], mvmt.defaults["clawnchSpeed"], mvmt.defaults["clawnchDuration"]};
+        float[] defaults = {mvmt.defaults["sprintMultiplier"], 
+                            mvmt.defaults["maxHorizSpeed"],
+                            mvmt.defaults["jumpSpeed"],
+                            mvmt.defaults["jumpsTotal"],
+                            mvmt.defaults["shootCooldown"],
+                            mvmt.defaults["shootForce"],
+                            mvmt.defaults["clawnchCooldown"],
+                            mvmt.defaults["clawnchSpeed"],
+                            mvmt.defaults["clawnchDuration"]};
         PowerupDefault = new List<float>(defaults);
 
         #region AddFunctions

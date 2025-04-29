@@ -5,49 +5,47 @@ using UnityEngine.InputSystem;
 
 public class Movement : MonoBehaviour
 {
-    private Rigidbody2D rb;
-    private CapsuleCollider2D coll;
+    private Rigidbody2D playerBody;
+    private CapsuleCollider2D playerCollider;
     private InputActions inputActions;
     [SerializeField] private LayerMask platformLayer;
-    private Bearzooka bz;
+    private Bearzooka bearzooka;
 
-    public bool isSprinting = false;
-    public bool canControlSprint = true;
-    public float sprintCap;
-    public float maxSprintCap;
-    public float sprintRate;
-    public float sprintMultiplier;
-    private bool sprintRecoverySoftEnabled;
-    private bool sprintRecoveryHardEnabled;
-    public float sprintRecoveryHardMin;
-    public float sprintRecoveryCooldown;
-    public float sprintRecoveryTimer;
-    public float sprintRecoveryRate;
-    public float maxHorizSpeed;
-    private float accel;
+    private bool canControlSprint = true;
+    private float sprintAmount;
+    private float maxSprintAmount;
+    private float sprintDepletionRate;
+    private float sprintMultiplier;
+    private bool sprintRecoveryFromZeroEnabled;
+    private float sprintRecoveryFromZeroMin;
+    private float sprintRecoveryCooldown;
+    private float sprintRecoveryTimer;
+    private float sprintRecoveryRate;
+    private float maxHorizSpeed;
+    private float acceleration;
 
-    public float jumpSpeed;
-    public int jumpsTotal;
-    public int jumpsAvailable;
-    public Dictionary<string, float> defaults = new Dictionary<string, float>();
+    private float jumpSpeed;
+    private int jumpsTotal;
+    private int jumpsAvailable;
+    private Dictionary<string, float> defaults = new Dictionary<string, float>();
 
     // Start is called before the first frame update
     void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
-        coll = GetComponent<CapsuleCollider2D>();
+        playerBody = GetComponent<Rigidbody2D>();
+        playerCollider = GetComponent<CapsuleCollider2D>();
         inputActions = new InputActions();
-        bz = GetComponent<Bearzooka>();
+        bearzooka = GetComponent<Bearzooka>();
 
-        accel = 5f;
+        acceleration = 5f;
 
         defaults.Add("sprintMultiplier", 1.2f);
         defaults.Add("maxHorizSpeed", 15);
         defaults.Add("jumpSpeed", 20);
         defaults.Add("jumpsTotal", 1);
-        defaults.Add("maxSprintCap", 100);
-        defaults.Add("sprintRate", 60);
-        defaults.Add("sprintRecoveryHardMin", 30);
+        defaults.Add("maxSprintAmount", 100);
+        defaults.Add("sprintDepletionRate", 60);
+        defaults.Add("sprintRecoveryFromZeroMin", 30);
         defaults.Add("sprintRecoveryCooldown", 4);
         defaults.Add("sprintRecoveryRate", 20);
     
@@ -55,12 +53,12 @@ public class Movement : MonoBehaviour
         maxHorizSpeed = defaults["maxHorizSpeed"];
         jumpSpeed = defaults["jumpSpeed"];
         jumpsTotal = (int)defaults["jumpsTotal"];
-        maxSprintCap = defaults["maxSprintCap"];
-        sprintCap = maxSprintCap;
-        sprintRate = defaults["sprintRate"];
+        maxSprintAmount = defaults["maxSprintAmount"];
+        sprintAmount = maxSprintAmount;
+        sprintDepletionRate = defaults["sprintDepletionRate"];
         sprintRecoveryCooldown = defaults["sprintRecoveryCooldown"];
         sprintRecoveryRate = defaults["sprintRecoveryRate"];
-        sprintRecoveryHardMin = defaults["sprintRecoveryHardMin"];
+        sprintRecoveryFromZeroMin = defaults["sprintRecoveryFromZeroMin"];
 
         defaults.Add("shootCooldown", 5f);
         defaults.Add("shootForce", 10f);
@@ -80,48 +78,39 @@ public class Movement : MonoBehaviour
         Vector2 moveInput = inputActions.Player.Move.ReadValue<Vector2>();
         // Debug.Log(moveInput);
 
-        #region HorizMovement
-        float desiredSpeed = moveInput.x * maxHorizSpeed;
-        isSprinting = false;
-        if (!inputActions.Player.Sprint.inProgress)
-        {
-            sprintRecoverySoftEnabled = true;
-        }
-        else if (sprintRecoveryHardEnabled && sprintCap < sprintRecoveryHardMin) {}
-        else if (moveInput.x == 0) {}
-        else isSprinting = true;
-        
-        if (isSprinting) 
+        #region HorizontalMovement
+        if (IsSprinting(moveInput)) 
         {            
-            if (sprintCap > 0)
-            {
-                sprintRecoveryTimer = 0f;
-                sprintRecoverySoftEnabled = false;
-                sprintCap = Mathf.Max(0f, sprintCap - sprintRate * Time.deltaTime);
-                desiredSpeed *= sprintMultiplier;
-            }
-            else sprintRecoveryHardEnabled = true;
+            HandleSprintingAmount();
+        }
+        else
+        {
+            sprintRecoveryTimer += Time.deltaTime;
         }
 
-        if (sprintRecoveryHardEnabled || sprintRecoverySoftEnabled) sprintRecoveryTimer += Time.deltaTime;
         if (sprintRecoveryTimer >= sprintRecoveryCooldown)
         {
-            if (sprintCap < maxSprintCap) sprintCap += sprintRecoveryRate * Time.deltaTime;
+            sprintAmount = Mathf.Min(maxSprintAmount, sprintAmount + sprintRecoveryRate * Time.deltaTime);
         }
-        if (sprintRecoveryHardEnabled && sprintCap >= sprintRecoveryHardMin) sprintRecoveryHardEnabled = false;
 
-        float difference = desiredSpeed - rb.velocity.x;
-        float finalXHoriz = Mathf.Abs(difference) * accel * Mathf.Sign(difference);
-        rb.AddForce(new Vector2(finalXHoriz, 0f), ForceMode2D.Force);
+        if (sprintRecoveryFromZeroEnabled && sprintAmount >= sprintRecoveryFromZeroMin) sprintRecoveryFromZeroEnabled = false;
+
+        float goalVelocity = moveInput.x * maxHorizSpeed;
+        goalVelocity *= IsSprinting(moveInput) ? sprintMultiplier : 1;
+        float difference = goalVelocity - playerBody.velocity.x;
+        float finalXHoriz = difference * acceleration;
+        playerBody.AddForce(new Vector2(finalXHoriz, 0f), ForceMode2D.Force);
 
         #endregion
 
         #region JumpReset
         float boxCastYSize = 0.3f;
-        float boxCastYDist = 0.2f;
+        float boxCastYDistance = 0.2f;
         float boxCastXShrink = 0.1f;
-        RaycastHit2D floorDetector = Physics2D.BoxCast(new Vector2(coll.bounds.center.x, coll.bounds.min.y), new Vector2(coll.size.x - boxCastXShrink, boxCastYSize), 0, Vector2.down, boxCastYDist, platformLayer);
-        if (floorDetector.collider != null && rb.velocity.y < 0.01)
+        Vector2 origin = new Vector2(playerCollider.bounds.center.x, playerCollider.bounds.min.y);
+        Vector2 size = new Vector2(playerCollider.size.x - boxCastXShrink, boxCastYSize);
+        RaycastHit2D floorDetector = Physics2D.BoxCast(origin, size, 0, Vector2.down, boxCastYDistance, platformLayer);
+        if (floorDetector.collider != null && playerBody.velocity.y < 0.01)
         {
             jumpsAvailable = jumpsTotal;
         }
@@ -132,14 +121,23 @@ public class Movement : MonoBehaviour
 
     }
 
-    private void OnEnable()
+    private bool IsSprinting(Vector2 moveInput)
     {
-        inputActions.Player.Enable();
+        if (!inputActions.Player.Sprint.inProgress) return false;
+        if (sprintRecoveryFromZeroEnabled && sprintAmount < sprintRecoveryFromZeroMin) return false;
+        if (moveInput.x == 0) return false;
+        return true;
     }
 
-    private void OnDisable()
+    private void HandleSprintingAmount()
     {
-        inputActions.Player.Disable();
+        if (sprintAmount <= 0)
+        {
+            sprintRecoveryFromZeroEnabled = true;
+            return;
+        }
+        sprintRecoveryTimer = 0f;
+        sprintAmount = Mathf.Max(0f, sprintAmount - sprintDepletionRate * Time.deltaTime);
     }
 
     public void Jump(InputAction.CallbackContext context)
@@ -148,7 +146,6 @@ public class Movement : MonoBehaviour
         if (!context.performed) return;
         if (jumpsAvailable < 1) return;
         jumpsAvailable -= 1;
-        rb.velocity = new Vector2(rb.velocity.x, jumpSpeed);
+        playerBody.velocity = new Vector2(playerBody.velocity.x, jumpSpeed);
     }
-
 }

@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 1953617817744338979}
   - component: {fileID: 8123409525122063275}
   m_Layer: 7
-  m_Name: bzAmmo
+  m_Name: BearzookaAmmo
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
